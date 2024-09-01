@@ -8,5 +8,10 @@
         Title="MainWindow" Height="450" Width="800" KeyDown="Window_KeyDown">
     <Grid>
         <Canvas x:Name="gameCanvas" Background="Black" Focusable="True"/>
+        <TextBlock x:Name="scoreTextBlock" Text="Score: 0" Foreground="White" HorizontalAlignment="Left" Margin="10" VerticalAlignment="Top"/>
+
+        <Button x:Name="restartBtn" Content="Restart" HorizontalAlignment="Center" VerticalAlignment ="Center" Visibility="Collapsed" Click="restartBtn_Click"/>
+
+        <Button x:Name="startBtn"  Content="Start" HorizontalAlignment="Center" VerticalAlignment ="Center" Click="startBtn_Click"/>
     </Grid>
 </Window>

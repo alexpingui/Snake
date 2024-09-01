@@ -33,7 +33,7 @@ namespace Snake
 
         private Direcrion direcrion = Direcrion.Right;
 
-        private const int timerInterval = 20;
+        private const int timerInterval = 100;
 
         private DispatcherTimer timer;
 
@@ -44,13 +44,18 @@ namespace Snake
 
         private List<Rectangle> snake = new List<Rectangle>();
 
+        private int score = 0;
         public MainWindow()
         {
-            InitializeComponent();
-            gameCanvas.Loaded += GameCanvasLoaded;
+            InitializeComponent(); 
         }
 
         private void GameCanvasLoaded(object sender, RoutedEventArgs e)
+        {
+            StartGame();
+        }
+
+        private void StartGame()
         {
             snakeHead = CreateSnakeSegment(new Point(5, 5));
             snake.Add(snakeHead);
@@ -75,6 +80,31 @@ namespace Snake
                 PlaceFood();
             }
 
+            if(newHeadPosition.X < 0 || newHeadPosition.Y < 0 
+                || newHeadPosition.X >= gameCanvas.ActualWidth / snakeSquareSize
+                || newHeadPosition.Y >= gameCanvas.ActualHeight / snakeSquareSize)
+            {
+                EndGame();
+                return;
+            }
+
+            if (snake.Count >= 4)
+            {
+                for(int i = 0; i < snake.Count; i++)
+                {
+                    Point currentPos = new Point(Canvas.GetLeft(snake[i]), Canvas.GetTop(snake[i]));
+
+                    for (int j = i + 1; j < snake.Count; j++)
+                    {
+                        Point nextCurrentPos = new Point(Canvas.GetLeft(snake[j]), Canvas.GetTop(snake[j]));
+                        if (currentPos == nextCurrentPos)
+                        {
+                            EndGame();
+                        }
+                    }
+                }
+            }
+
             for(int i = snake.Count - 1; i > 0; i--)
             {
                 Canvas.SetLeft(snake[i], Canvas.GetLeft(snake[i - 1]));
@@ -85,13 +115,23 @@ namespace Snake
             Canvas.SetTop(snakeHead, newHeadPosition.Y * snakeSquareSize);
         }
 
+        private void EndGame()
+        {
+            timer.Stop();
+            restartBtn.Visibility = Visibility.Visible;
+        }
+
         private void EatFood()
         {
+            score++;
+
             Rectangle newSnake = CreateSnakeSegment(foodPosition);
             snake.Add(newSnake);
             gameCanvas.Children.Add(newSnake);
 
             gameCanvas.Children.Remove(gameCanvas.Children.OfType<Image>().FirstOrDefault());
+
+            scoreTextBlock.Text = $"Score: {score}";
         }
 
         private Point CalculateNewHeadPosition()
@@ -174,6 +214,24 @@ namespace Snake
                 if(direcrion!= Direcrion.Left)
                     direcrion= Direcrion.Right; break;
             }
+        }
+
+        private void restartBtn_Click(object sender, RoutedEventArgs e)
+        {
+            score = 0;
+            scoreTextBlock.Text = $"Score: {score}";
+            snake.Clear();
+            gameCanvas.Children.Clear();
+            restartBtn.Visibility = Visibility.Collapsed;
+
+            StartGame();
+        }
+
+        private void startBtn_Click(object sender, RoutedEventArgs e)
+        {
+            StartGame();
+            startBtn.Visibility = Visibility.Collapsed;
+
         }
     }
 }
