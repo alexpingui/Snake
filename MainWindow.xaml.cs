@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace Snake
 {
@@ -24,12 +25,25 @@ namespace Snake
         const int snakeSquareSize = 30;
 
         private readonly SolidColorBrush snakeColor = Brushes.Green;
-        private readonly SolidColorBrush foodColor = Brushes.Red;
+
+        private enum Direcrion
+        {
+            Left, Right, Top, Bottom
+        }
+
+        private Direcrion direcrion = Direcrion.Right;
+
+        private const int timerInterval = 20;
+
+        private DispatcherTimer timer;
 
         private Rectangle snakeHead;
         private Point foodPosition;
 
         private readonly static Random randomFoodPosition = new Random();
+
+        private List<Rectangle> snake = new List<Rectangle>();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -39,9 +53,68 @@ namespace Snake
         private void GameCanvasLoaded(object sender, RoutedEventArgs e)
         {
             snakeHead = CreateSnakeSegment(new Point(5, 5));
+            snake.Add(snakeHead);
+
             gameCanvas.Children.Add(snakeHead);
 
             PlaceFood();
+
+            timer = new DispatcherTimer();
+            timer.Tick += TimerTick;
+            timer.Interval = TimeSpan.FromMilliseconds(timerInterval);
+            timer.Start();
+        }
+
+        private void TimerTick(object sender, EventArgs e)
+        {
+            Point newHeadPosition = CalculateNewHeadPosition();
+
+            if(newHeadPosition == foodPosition)
+            {
+                EatFood();
+                PlaceFood();
+            }
+
+            for(int i = snake.Count - 1; i > 0; i--)
+            {
+                Canvas.SetLeft(snake[i], Canvas.GetLeft(snake[i - 1]));
+                Canvas.SetTop(snake[i], Canvas.GetTop(snake[i - 1]));
+            }
+
+            Canvas.SetLeft(snakeHead, newHeadPosition.X * snakeSquareSize);
+            Canvas.SetTop(snakeHead, newHeadPosition.Y * snakeSquareSize);
+        }
+
+        private void EatFood()
+        {
+            Rectangle newSnake = CreateSnakeSegment(foodPosition);
+            snake.Add(newSnake);
+            gameCanvas.Children.Add(newSnake);
+
+            gameCanvas.Children.Remove(gameCanvas.Children.OfType<Image>().FirstOrDefault());
+        }
+
+        private Point CalculateNewHeadPosition()
+        {
+            double left = Canvas.GetLeft(snakeHead) / snakeSquareSize;
+            double top = Canvas.GetTop(snakeHead) / snakeSquareSize;
+
+            Point headCurrentPos = new Point(left, top);
+            Point newHeadPosition = new Point();
+
+            switch(direcrion)
+            {
+                case Direcrion.Left:
+                    newHeadPosition = new Point(headCurrentPos.X - 1, headCurrentPos.Y); break;
+                case Direcrion.Right:
+                    newHeadPosition = new Point(headCurrentPos.X + 1, headCurrentPos.Y); break;
+                case Direcrion.Top:
+                    newHeadPosition = new Point(headCurrentPos.X, headCurrentPos.Y - 1); break;
+                case Direcrion.Bottom:
+                    newHeadPosition = new Point(headCurrentPos.X, headCurrentPos.Y + 1); break;
+            }
+
+            return newHeadPosition;
         }
 
         private void PlaceFood()
@@ -79,6 +152,28 @@ namespace Snake
             Canvas.SetTop(rectangle, position.Y * snakeSquareSize);
 
             return rectangle;   
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch(e.Key)
+            {
+                case Key.Up:
+                    if(direcrion != Direcrion.Bottom)
+                    direcrion = Direcrion.Top; break;
+
+                case Key.Down:
+                if(direcrion != Direcrion.Top)
+                direcrion = Direcrion.Bottom; break;
+
+                case Key.Left:
+                    if(direcrion != Direcrion.Right)
+                        direcrion = Direcrion.Left; break;
+
+                case Key.Right:
+                if(direcrion!= Direcrion.Left)
+                    direcrion= Direcrion.Right; break;
+            }
         }
     }
 }
